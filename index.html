@@ -45,7 +45,14 @@
   <h1>Calendrier des courses - Moselle & Grand Est</h1>
   
     
+    
     <div style="text-align: center; margin: 20px;">
+      <select id="regionFilter" style="padding: 5px; margin-right: 20px;">
+        <option value="Grand Est">Grand Est</option>
+        <option value="all">Toutes les régions</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="🔍 Rechercher par nom ou ville" style="padding: 5px; width: 250px; margin-right: 20px;">
+    
       <input type="text" id="searchInput" placeholder="🔍 Rechercher par nom ou ville" style="padding: 5px; width: 250px; margin-right: 20px;">
     
       
@@ -95,24 +102,7 @@
             initialDate: '2025-09-01',
             locale: 'fr',
             
-    
     events: data.map(course => ({
-      title: course.nom,
-      start: course.date,
-      extendedProps: course,
-      display: 'block'
-    })),
-    eventContent: function(arg) {
-      const sponsor = arg.event.extendedProps.tag_sponsor;
-      const logo = arg.event.extendedProps.image_url;
-      const customHtml = document.createElement('div');
-      customHtml.innerHTML = sponsor && logo ?
-        '<img src="' + logo + '" alt="logo" style="width:20px;height:20px;vertical-align:middle;margin-right:5px;">' +
-        arg.event.title :
-        arg.event.title;
-      return { domNodes: [customHtml] };
-    },
-    
       original: course,
     
               
@@ -138,44 +128,46 @@
           });
 
           
+          
           calendar.render();
 
           
-    document.getElementById('typeFilter').addEventListener('change', function(e) {
-      document.getElementById('searchInput').dispatchEvent(new Event('input'));
-    });
-
-    document.getElementById('distanceFilter').addEventListener('change', function(e) {
-      document.getElementById('searchInput').dispatchEvent(new Event('input'));
-    });
-
-    document.getElementById('searchInput').addEventListener('input', function() {
-      const selectedType = document.getElementById('typeFilter').value;
-      const selectedDist = document.getElementById('distanceFilter').value;
-      const searchVal = document.getElementById('searchInput').value.toLowerCase();
-
-      const filtered = data.filter(course => {
-        const matchType = selectedType === 'all' || course.type === selectedType;
-        const distance = course.distance_km;
-        let matchDist = true;
-        if (selectedDist === '0-10') matchDist = distance <= 10;
-        else if (selectedDist === '11-20') matchDist = distance > 10 && distance <= 20;
-        else if (selectedDist === '21+') matchDist = distance > 20;
-
-        const matchSearch = course.nom.toLowerCase().includes(searchVal) ||
-                            course.ville.toLowerCase().includes(searchVal);
-        return matchType && matchDist && matchSearch;
-      });
-
-      calendar.removeAllEvents();
-      calendar.addEventSource(filtered.map(course => ({
-        title: course.nom,
-        start: course.date,
-        extendedProps: course,
-        display: 'block'
-      })));
-    });
+    const applyFilters = () => {
+      const selectedRegion = document.getElementById('regionFilter').value;
     
+            const selectedType = document.getElementById('typeFilter').value;
+            const selectedDist = document.getElementById('distanceFilter').value;
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = data.filter(course => {
+              const matchType = selectedType === 'all' || course.type === selectedType;
+              const distance = course.distance_km;
+              let matchDist = true;
+              if (selectedDist === '0-10') matchDist = distance <= 10;
+              else if (selectedDist === '11-20') matchDist = distance > 10 && distance <= 20;
+              else if (selectedDist === '21+') matchDist = distance > 20;
+
+              const matchSearch = course.nom.toLowerCase().includes(searchVal) ||
+                                  course.ville.toLowerCase().includes(searchVal);
+              return matchType && matchDist && matchSearch && (selectedRegion === "all" || course.region === selectedRegion);
+            });
+
+            calendar.removeAllEvents();
+            calendar.addEventSource(filtered.map(course => ({
+              title: course.tag_sponsor && course.image_url
+                     ? "🏁 " + course.nom
+                     : course.nom,
+              start: course.date,
+              extendedProps: course
+            })));
+          };
+
+          document.getElementById('typeFilter').addEventListener('change', applyFilters);
+          document.getElementById('distanceFilter').addEventListener('change', applyFilters);
+          document.getElementById('searchInput').addEventListener('input', applyFilters);
+    
+
+          document.getElementById('typeFilter').addEventListener('change', function(e) {
             const selected = e.target.value;
             const filteredEvents = selected === 'all' ? data : data.filter(c => c.type === selected);
 
