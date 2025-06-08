@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Calendrier Coursemail</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.css" rel="stylesheet">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f6f6f6; }
+    h1 { text-align: center; padding: 20px; background: #004080; color: white; margin: 0; }
+    #calendar { max-width: 1000px; margin: 40px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 6px;
+      width: 80%;
+      max-width: 500px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover { color: black; }
+  </style>
+</head>
+<body>
+  <h1>Calendrier des courses - Moselle & Grand Est</h1>
+  
+    
+    
+    <div style="text-align: center; margin: 20px;">
+      <select id="regionFilter" style="padding: 5px; margin-right: 20px;">
+        <option value="Grand Est">Grand Est</option>
+        <option value="all">Toutes les régions</option>
+      </select>
+      <input type="text" id="searchInput" placeholder="🔍 Rechercher par nom ou ville" style="padding: 5px; width: 250px; margin-right: 20px;">
+    
+      <input type="text" id="searchInput" placeholder="🔍 Rechercher par nom ou ville" style="padding: 5px; width: 250px; margin-right: 20px;">
+    
+      
+    <label for="typeFilter"><strong>Filtrer par type :</strong></label>
+    <select id="distanceFilter" style="margin-left: 20px;">
+      <option value="all">Toutes distances</option>
+      <option value="0-10">0–10 km</option>
+      <option value="11-20">11–20 km</option>
+      <option value="21+">21 km et +</option>
+    </select>
+    
+      <select id="typeFilter">
+        <option value="all">Tous</option>
+        <option value="Trail">Trail</option>
+        <option value="Route">Route</option>
+        <option value="Cross">Cross</option>
+      </select>
+    </div>
+    <div id="calendar"></div>
+    
+
+  <!-- Modal -->
+  <div id="eventModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('eventModal').style.display='none'">&times;</span>
+      <h2 id="modalTitle"></h2>
+      <p><strong>Date :</strong> <span id="modalDate"></span></p>
+      <p><strong>Heure :</strong> <span id="modalHeure"></span></p>
+      <p><strong>Lieu :</strong> <span id="modalVille"></span></p>
+      <p><strong>Distance :</strong> <span id="modalDistance"></span> km</p>
+      <p><strong>Dénivelé :</strong> <span id="modalDenivele"></span> m</p>
+      <p><strong>Prix :</strong> <span id="modalPrix"></span> €</p>
+      <p><a id="modalLien" href="#" target="_blank">👉 Site officiel</a></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.17/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('courses.json')
+        .then(response => response.json())
+        .then(data => {
+          const calendarEl = document.getElementById('calendar');
+
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            initialDate: '2025-09-01',
+            locale: 'fr',
+            
+    events: data.map(course => ({
+      original: course,
+    
+              
+    title: course.tag_sponsor ? "🏁 " + course.nom : course.nom,
+    
+              start: course.date,
+              extendedProps: course
+            })),
+            eventClick: function(info) {
+              const course = info.event.extendedProps;
+              document.getElementById('modalTitle').textContent = course.nom;
+              document.getElementById('modalDate').textContent = course.date;
+              document.getElementById('modalHeure').textContent = course.heure;
+              document.getElementById('modalVille').textContent = course.ville;
+              document.getElementById('modalDistance').textContent = course.distance_km;
+              document.getElementById('modalDenivele').textContent = course.denivele_m;
+              document.getElementById('modalPrix').textContent = course.prix_euros;
+              document.getElementById('modalLien').href = course.site_officiel;
+
+              document.getElementById('eventModal').style.display = 'block';
+              info.jsEvent.preventDefault();
+            }
+          });
+
+          
+          
+          calendar.render();
+
+          
+    const applyFilters = () => {
+      const selectedRegion = document.getElementById('regionFilter').value;
+    
+            const selectedType = document.getElementById('typeFilter').value;
+            const selectedDist = document.getElementById('distanceFilter').value;
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = data.filter(course => {
+              const matchType = selectedType === 'all' || course.type === selectedType;
+              const distance = course.distance_km;
+              let matchDist = true;
+              if (selectedDist === '0-10') matchDist = distance <= 10;
+              else if (selectedDist === '11-20') matchDist = distance > 10 && distance <= 20;
+              else if (selectedDist === '21+') matchDist = distance > 20;
+
+              const matchSearch = course.nom.toLowerCase().includes(searchVal) ||
+                                  course.ville.toLowerCase().includes(searchVal);
+              return matchType && matchDist && matchSearch && (selectedRegion === "all" || course.region === selectedRegion);
+            });
+
+            calendar.removeAllEvents();
+            calendar.addEventSource(filtered.map(course => ({
+              title: course.tag_sponsor && course.image_url
+                     ? "🏁 " + course.nom
+                     : course.nom,
+              start: course.date,
+              extendedProps: course
+            })));
+          };
+
+          document.getElementById('typeFilter').addEventListener('change', applyFilters);
+          document.getElementById('distanceFilter').addEventListener('change', applyFilters);
+          document.getElementById('searchInput').addEventListener('input', applyFilters);
+    
+
+          document.getElementById('typeFilter').addEventListener('change', function(e) {
+            const selected = e.target.value;
+            const filteredEvents = selected === 'all' ? data : data.filter(c => c.type === selected);
+
+            calendar.removeAllEvents();
+            
+            const distanceFiltered = filteredEvents.filter(course => {
+              const distance = course.distance_km;
+              const selectedDist = document.getElementById('distanceFilter').value;
+              if (selectedDist === '0-10') return distance <= 10;
+              if (selectedDist === '11-20') return distance > 10 && distance <= 20;
+              if (selectedDist === '21+') return distance > 20;
+              return true;
+            });
+
+            calendar.addEventSource(distanceFiltered.map(course => ({
+    
+              
+    title: course.tag_sponsor ? "🏁 " + course.nom : course.nom,
+    
+              start: course.date,
+              extendedProps: course
+            })));
+          });
+    
+        });
+
+      // Fermer la modal si clic à l'extérieur
+      window.onclick = function(event) {
+        const modal = document.getElementById('eventModal');
+        if (event.target === modal) {
+          modal.style.display = 'none';
+        }
+      }
+    });
+  </script>
+</body>
+</html>
