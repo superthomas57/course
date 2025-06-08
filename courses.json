@@ -1,13 +1,13 @@
 [
   {
-    "id": "test001",
-    "nom": "Trail des Vosges",
+    "id": "safe001",
+    "nom": "Course de démonstration",
     "date": "2025-06-20",
-    "ville": "Nancy",
-    "distance_km": 12,
-    "denivele_m": 400,
-    "prix_euros": 10,
-    "heure": "09:00",
+    "ville": "Strasbourg",
+    "distance_km": 10,
+    "denivele_m": 150,
+    "prix_euros": 12,
+    "heure": "09:30",
     "type": "trail",
     "site_officiel": "https://example.com",
     "maj": "2025-06-08T08:00:00Z"

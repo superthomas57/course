@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Calendrier des courses - Moselle & Grand Est</title>
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.css" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <title>Calendrier des Courses</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -34,9 +33,9 @@
 
   <div id="calendar"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.7/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
   <script>
-    async function loadEvents() {
+    document.addEventListener('DOMContentLoaded', async function () {
       const response = await fetch('courses.json');
       const data = await response.json();
 
@@ -53,23 +52,19 @@
         }));
       };
 
-      let calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      const calendarEl = document.getElementById('calendar');
+      const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'fr',
-        initialDate: new Date().toISOString().slice(0, 10),
+        events: filtered(),
         eventClick: function(info) {
           let e = info.event.extendedProps;
-          let content = `
-            <b>${e.nom}</b><br>
-            📍 ${e.ville || ''}<br>
-            📅 ${e.date || ''} - 🕘 ${e.heure || ''}<br>
-            🏃 ${e.distance_km || '?'} km / ⛰ ${e.denivele_m || '?'} m<br>
-            💶 ${e.prix_euros || '?'} €<br>
-            🔗 <a href="${e.site_officiel}" target="_blank">Site officiel</a>
-          `;
-          alert(content);
-        },
-        events: filtered()
+          alert(
+            `${e.nom}\n📍 ${e.ville || ''}\n📅 ${e.date || ''} - 🕘 ${e.heure || ''}\n` +
+            `🏃 ${e.distance_km || '?'} km / ⛰ ${e.denivele_m || '?'} m\n` +
+            `💶 ${e.prix_euros || '?'} €\n🔗 ${e.site_officiel}`
+          );
+        }
       });
 
       calendar.render();
@@ -89,9 +84,7 @@
           document.getElementById('typeFilter').value
         ));
       });
-    }
-
-    document.addEventListener('DOMContentLoaded', loadEvents);
+    });
   </script>
 </body>
 </html>
